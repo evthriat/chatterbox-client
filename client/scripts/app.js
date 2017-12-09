@@ -3,7 +3,6 @@
 
 $(document).ready(function() {
     
-  
 
 
   $('#sendMessage').on('click', function(event) {
@@ -11,21 +10,21 @@ $(document).ready(function() {
     var $messageField = $('#messageField');
     
     message.username = app.username;
-    console.log(app.username);
     message.text = $messageField.val();
-    message.roomname = app.roomname;
+    message.roomname = app.roomName;
+
     $messageField.val('');
     app.send(message);
-    console.log(`Message:${JSON.stringify(message)}`);
   });
   $('#createroom').on('click', function(event) {
     
     var roomName = (prompt('What do you want to call the room?') || 'lobby');
     app.addRoom(roomName);
+    app.changeRoom(roomName);
   });
   $('#roomselector').change(function(event) {
     var roomName = $(this).find(':selected').val();
-    app.renderRoom(roomName);
+    app.changeRoom(roomName);
   });
     //$.get('http://parse.sfm6.hackreactor.com/chatterbox/classes/messages').then(console.log);
   class ChatterBox {
@@ -33,41 +32,63 @@ $(document).ready(function() {
       this.url = url;
       this.lastUpdate = 0;
       this.username = window.location.search.match(/\?username=(.*)/)[1];
-      this.rooms = ['Lobby'];
-      this.roomName = 'Lobby';
-      $('#roomselector').val(this.roomName);
+      this.rooms = [];
     }
     init () {
-      $.get(this.url, 'order=updatedAt').then((data) => {
-        //console.log(data)
-                //debugger
-        _(data.results).each((messageData) => {
-          //console.log(`data:${Date.parse(messageData.updatedAt)}, last:${this.lastUpdate}`);
-          this.lastUpdate = Date.parse(messageData.updatedAt);
-          var message = {};
-          message.text = escape(messageData.text);
-          message.username = escape(messageData.username);
-          message.roomname = escape(messageData.roomname);
-          message.updatedAt = Date.parse(messageData.updatedAt);
-          message.createdAt = Date.parse(messageData.createdAt);
-          this.renderMessage(message);
-          this.addRoom(message.roomname);
+      console.log('here');
+      var returnObj = $.get(this.url)
+        
+        .then((data) => {
+          _(data.results).each((messageData) => {
+            console.log(`data:${Date.parse(messageData.updatedAt)}, last:${this.lastUpdate}`);
+            this.lastUpdate = Date.parse(messageData.updatedAt);
+            var message = {};
+            message.text = messageData.text;
+            message.username = messageData.username;
+            message.roomname = messageData.roomname;
+            message.updatedAt = Date.parse(messageData.updatedAt);
+            
 
-        });
-      });
-            //setTimeout for fetch every one second
-                //render messages
-       
+            console.log('Message', message);
+          
+            if (message.username !== undefined) {
+
+              message.text = message.text === undefined ? '' : message.text;
+              message.roomname = message.roomname === undefined ? '' : message.roomname;
+              this.renderMessage(message);
+              this.addRoom(message.roomname);
+            }
+
+          });
+        })
+
+        .fail(error => console.log(`Error:${error}`));
+    
+      this.roomName = 'Welcome';
+      this.addRoom(this.roomName);
+      this.changeRoom(this.roomName);
     }
 
+    //param: roomname:string
     addRoom (roomname) {
       if (!_(this.rooms).contains(roomname) && roomname.length > 0) {
         this.rooms.push(roomname);
-        $('#roomselector').append(`<option class="roomoption" value="${roomname}">${roomname}</option>`);
-        this.renderRoom(roomname);
+
+        var roomnameNode = document.createElement('option');  //<div class="username">${message.username}</div>
+        roomnameNode.classList.add( 'roomoption');
+        roomnameNode.appendChild(document.createTextNode(roomname));
+
+        $('#roomselector').append(roomnameNode);
       }
     }
+
+    changeRoom (roomname) {
+      this.roomName = roomname;
+      this.renderRoom(this.roomName);
+      $('#roomselector').val(this.roomName);
+    }
      
+    //param: message object with strings
     send (message) {
       var post = $.post(this.url, message).success((...args) => {
         for (var i = 0; i < args.length; i++) {
@@ -80,6 +101,7 @@ $(document).ready(function() {
       });
             
     }
+
     fetch () {
 //'where={"username":"hank"}
       $.get(this.url, 'order=-updatedAt').then((data) => {
@@ -90,44 +112,73 @@ $(document).ready(function() {
           if (Date.parse(messageData.updatedAt) > this.lastUpdate) {
             this.lastUpdate = Date.parse(messageData.updatedAt);
             var message = {};
-            message.text = this.escapeHTML(messageData.text);
-            console.log(messageData.text);
-            console.log(message.text);
-            message.username = this.escapeHTML(messageData.username);
-            message.roomname = this.escapeHTML(messageData.roomname);
-            this.addRoom(message.roomname);
+            message.text = messageData.text;
+            message.username = messageData.username;
+            message.roomname = messageData.roomname;
             message.updatedAt = Date.parse(messageData.updatedAt);
-            message.createdAt = Date.parse(messageData.createdAt);
             this.renderMessage(message);
+            this.addRoom(message.roomname);
           }
         });
       });
     }
-    escapeHTML(stringToEscape) {
+
+    escapeString(string) {
       var div = document.createElement('div');
-      div.appendChild(document.createTextNode(stringToEscape));
+      div.appendChild(document.createTextNode(string));  //<div class="username">${message.username}</div>
       return div.innerHTML;
     }
-  
 
     renderMessage(message) {
-      var username = `<div class="username">${message.username}</div>`;
-      var text = `<div class='text'>${message.text}</div>`;
+      var username = document.createElement('div');  //<div class="username">${message.username}</div>
+      username.classList.add('username');
+      username.appendChild(document.createTextNode(message.username));
+
+      var roomname = document.createElement('div');  //<div class="username">${message.username}</div>
+      roomname.classList.add( 'roomname');
+      roomname.appendChild(document.createTextNode(message.roomname));
+
+      var text = document.createElement('div');  //<div class="username">${message.username}</div>
+      text.classList.add( 'text');
+      text.appendChild(document.createTextNode(message.text));
+
+      var updatedAt = document.createElement('div');  //<div class="username">${message.username}</div>
+      updatedAt.classList.add( 'updatedAt');
+      updatedAt.appendChild(document.createTextNode(message.updatedAt));
+
+
+      //console.log(username)
+      //var text = `<div class='text'>${message.text}</div>`;
 
       if (message.roomname === this.roomname) {
-        var roomname = `<div class='roomname'>${message.roomname}</div>`;
+        roomname.classList.remove('hide');
       } else {
-        var roomname = `<div class='roomname hide'>${message.roomname}</div>`;
+        roomname.classList.add('hide');
       }
-      var created = `<div class='createdat'>${message.createdAt}</div>`;
-      var updated = `<div class='updatedat'>${message.updatedAt}</div>`;
-      $('#chats').prepend(`<div class='message'>${username}${text}${roomname}${created}${updated}</div>`);
+      // var created = `<div class='createdat'>${message.createdAt}</div>`;
+      // var updated = `<div class='updatedat'>${message.updatedAt}</div>`;
+      // var message = document.createElement('div');
+      // message.appendChild(username);
+      // message.appendChild(text)
+
+      var messageNode = document.createElement('div');  //<div class="username">${message.username}</div>
+      messageNode.classList.add('message');
+      messageNode.appendChild(username);
+      messageNode.appendChild(text);
+      messageNode.appendChild(roomname);
+      messageNode.appendChild(updatedAt);
+
+
+
+      $('#chats').prepend(messageNode);
       
     }
     clearMessage() {
 
     }
     renderRoom(roomname) {
+      var escapedRoomName = this.escapeString(roomname);
+    
       var $roomMessages = $('.message');
 
       $roomMessages.addClass('hide');
@@ -135,15 +186,11 @@ $(document).ready(function() {
         var $this = $(this);
         var $child = $this.find('.roomname');
         var val = $child.text();
-        if (val === 'lobby' && roomname === 'lobby') {
-          //debugger;
-        }
-        return (val === roomname);
+        return (val === escapedRoomName);
       });
       //set visibility to visible
-      console.log($rooms);
       $rooms.removeClass('hide');
-      this.roomName = roomname;
+      this.roomName = escapedRoomName;
       $('#roomselector').val(this.roomName);
 
     }
@@ -152,6 +199,6 @@ $(document).ready(function() {
   window.app.init();
   window.app.fetch();
   
-  setInterval(window.app.fetch.bind(app), 1000);
+  setInterval(window.app.fetch.bind(app), 300);
   //refactor fetch to have no setTimeout, then use setInterval to call fetch every x seconds
 });
