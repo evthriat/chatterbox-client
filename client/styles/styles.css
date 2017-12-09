@@ -131,6 +131,10 @@ form input[type=text] {
 
 }
 
+.message.hide {
+  display: none;
+}
+
 .message:hover {
   background-color: #f9f9f9;
 }
