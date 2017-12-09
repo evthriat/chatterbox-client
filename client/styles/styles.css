@@ -90,6 +90,20 @@ form input[type=text] {
   padding-bottom: 10px;
 }
 
+.createdat {
+  text-align: right;
+  font-size: 10px;
+  font-family: helvetica;
+  margin-top: 5px;
+}
+
+.updatedat {
+  text-align: right;
+  font-size: 10px;
+  font-family: helvetica;
+  margin-top: 5px;
+}
+
 .chat:hover {
     background-color: #ddd;
 }
