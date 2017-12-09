@@ -90,9 +90,11 @@ $(document).ready(function() {
           if (Date.parse(messageData.updatedAt) > this.lastUpdate) {
             this.lastUpdate = Date.parse(messageData.updatedAt);
             var message = {};
-            message.text = escape(messageData.text);
-            message.username = escape(messageData.username);
-            message.roomname = escape(messageData.roomname);
+            message.text = this.escapeHTML(messageData.text);
+            console.log(messageData.text);
+            console.log(message.text);
+            message.username = this.escapeHTML(messageData.username);
+            message.roomname = this.escapeHTML(messageData.roomname);
             this.addRoom(message.roomname);
             message.updatedAt = Date.parse(messageData.updatedAt);
             message.createdAt = Date.parse(messageData.createdAt);
@@ -101,6 +103,13 @@ $(document).ready(function() {
         });
       });
     }
+    escapeHTML(stringToEscape) {
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(stringToEscape));
+      return div.innerHTML;
+    }
+  
+
     renderMessage(message) {
       var username = `<div class="username">${message.username}</div>`;
       var text = `<div class='text'>${message.text}</div>`;
@@ -125,10 +134,15 @@ $(document).ready(function() {
       var $rooms = $roomMessages.filter(function() {
         var $this = $(this);
         var $child = $this.find('.roomname');
-        var val = $child.val();
+        var val = $child.text();
+        if (val === 'lobby' && roomname === 'lobby') {
+          //debugger;
+        }
         return (val === roomname);
       });
-      //set visibility to visible 
+      //set visibility to visible
+      console.log($rooms);
+      $rooms.removeClass('hide');
       this.roomName = roomname;
       $('#roomselector').val(this.roomName);
 
