@@ -1,28 +1,23 @@
 // YOUR CODE HERE:
 
 class ChatterBox {
-  constructor(url = 'http://parse.sfm6.hackreactor.com/chatterbox/classes/messages') {
-    this.url = url;
+  constructor(server = 'http://parse.sfm6.hackreactor.com/chatterbox/classes/messages') {
+    this.server = server;
     this.lastUpdate = 0;
     this.username = window.location.search.length > 0 ? window.location.search.match(/\?username=(.*)/)[1] : 'username';
     this.rooms = [];
   }
 
   init () {
-    console.log('here');
-    var returnObj = $.get(this.url, (data) => {
+    var returnObj = $.get(this.server, (data) => {
       _(data.results).each((messageData) => {
-        console.log(`data:${Date.parse(messageData.updatedAt)}, last:${this.lastUpdate}`);
         this.lastUpdate = Date.parse(messageData.updatedAt);
         var message = {};
         message.text = messageData.text;
         message.username = messageData.username;
         message.roomname = messageData.roomname;
         message.updatedAt = Date.parse(messageData.updatedAt);
-        
-
-        console.log('Message', message);
-      
+              
         if (message.username !== undefined) {
 
           message.text = message.text === undefined ? '' : message.text;
@@ -30,18 +25,16 @@ class ChatterBox {
           this.renderMessage(message);
           this.addRoom(message.roomname);
         }
-
+        $('.username').on('click', function(event) {
+          console.log('clicked');
+        });// {
+          //console.log("Clicked");
+        //});//this.handleUsernameClick.bind(this));
       });
+    //this.roomName = 'Welcome';
+    //this.addRoom(this.roomName);
+    //this.changeRoom(this.roomName);
     });
-
-    returnObj.fail(error => console.log(`Error:${error}`));
-    returnObj.done(error => console.log(`Done:${error}`));
-    returnObj.success(error => console.log(`Done:${error}`));
-
-  
-    this.roomName = 'Welcome';
-    this.addRoom(this.roomName);
-    this.changeRoom(this.roomName);
   }
 
   //param: roomname:string
@@ -53,53 +46,60 @@ class ChatterBox {
       roomnameNode.classList.add( 'roomoption');
       roomnameNode.appendChild(document.createTextNode(roomname));
 
-      $('#roomselector').append(roomnameNode);
+      $('#roomSelect').append(roomnameNode);
     }
   }
 
   changeRoom (roomname) {
     this.roomName = roomname;
     this.renderRoom(this.roomName);
-    $('#roomselector').val(this.roomName);
+    $('#roomSelect').val(this.roomName);
   }
      
   //param: message object with strings
   send (message) {
-    var post = $.post(this.url, message).success((...args) => {
-      for (var i = 0; i < args.length; i++) {
-        console.log(args[i]);
+    $.ajax({
+      url: this.server,
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(message),
+      success: (data) => {
+        console.log('chatterbox: Message sent', data);
+      },
+      error: (data) => {
+        console.error('chatterbox: Failed to send message', data);
       }
-    });
-    
-    post.error(error => {
-      console.log(`Error:${error}`);
-    });
-          
+    });    
   }
 
   fetch () {
   //'where={"username":"hank"}
-    $.get(this.url, 'order=-updatedAt').then((data) => {
-      //console.log(data)
-              //debugger
-      _(data.results).each((messageData) => {
-        //console.log(`data:${Date.parse(messageData.updatedAt)}, last:${this.lastUpdate}`);
-        if (Date.parse(messageData.updatedAt) > this.lastUpdate) {
-          this.lastUpdate = Date.parse(messageData.updatedAt);
-          var message = {};
-          message.text = messageData.text;
-          message.username = messageData.username;
-          message.roomname = messageData.roomname;
-          message.updatedAt = Date.parse(messageData.updatedAt);
+    $.ajax({
+      url: this.server,
+      type: 'GET',
+      data: 'order=-updatedAt',
+      success: (data) => {
+        _(data.results).each((messageData) => {
+          if (Date.parse(messageData.updatedAt) > this.lastUpdate) {
+            this.lastUpdate = Date.parse(messageData.updatedAt);
+            var message = {};
+            message.text = messageData.text;
+            message.username = messageData.username;
+            message.roomname = messageData.roomname;
+            message.updatedAt = Date.parse(messageData.updatedAt);
 
-          message.username = message.username === undefined ? '' : message.username;
-          message.text = message.text === undefined ? '' : message.text;
-          message.roomname = message.roomname === undefined ? '' : message.roomname;
+            message.username = message.username === undefined ? '' : message.username;
+            message.text = message.text === undefined ? '' : message.text;
+            message.roomname = message.roomname === undefined ? '' : message.roomname;
 
-          this.renderMessage(message);
-          this.addRoom(message.roomname);
-        }
-      });
+            this.renderMessage(message);
+            this.addRoom(message.roomname);
+          }
+        });
+      },
+      error: (data) => {
+        console.log('chatterbox: Failed to receive data', data);
+      }
     });
   }
 
@@ -141,6 +141,7 @@ class ChatterBox {
     // message.appendChild(username);
     // message.appendChild(text)
 
+    
     var messageNode = document.createElement('div');  //<div class="username">${message.username}</div>
     messageNode.classList.add('message');
     messageNode.appendChild(username);
@@ -154,8 +155,8 @@ class ChatterBox {
     
   }
 
-  clearMessage() {
-
+  clearMessages() {
+    $('#chats').children().remove();
   }
 
   renderRoom(roomname) {
@@ -173,8 +174,12 @@ class ChatterBox {
     //set visibility to visible
     $rooms.removeClass('hide');
     this.roomName = escapedRoomName;
-    $('#roomselector').val(this.roomName);
+    $('#roomSelect').val(this.roomName);
 
+  }
+
+  handleUsernameClick(event) {
+    console.log('clicked');
   }
 }  
 
@@ -205,10 +210,12 @@ $(document).ready(function() {
     app.addRoom(roomName);
     app.changeRoom(roomName);
   });
-  $('#roomselector').change(function(event) {
+  $('#roomSelect').change(function(event) {
     var roomName = $(this).find(':selected').val();
     app.changeRoom(roomName);
   });
+
+  //app.handleUsernameClick.bind(app));
     //$.get('http://parse.sfm6.hackreactor.com/chatterbox/classes/messages').then(console.log);
 });
 

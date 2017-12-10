@@ -46,7 +46,7 @@ describe('chatterbox', function() {
         app.send(message);
         ajaxOptions = typeof $.ajax.args[0][0] === 'object' ? $.ajax.args[0][0] : $.ajax.args[0][1];
         var result = ajaxOptions.data;
-        expect(result).to.deep.equal(message);
+        expect(result).to.deep.equal(JSON.stringify(message));
         done();
       });
 
@@ -87,6 +87,7 @@ describe('chatterbox', function() {
       });
 
       it('should be able to add rooms to the DOM', function() {
+        app.addRoom('superLobby');
         app.renderRoom('superLobby');
 
         expect($('#roomSelect').children().length).to.equal(1);

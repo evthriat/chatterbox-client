@@ -3,11 +3,12 @@
 <head>
   <title>Mocha Spec Runner</title>
   <link rel="stylesheet" href="lib/mocha/mocha.css">
-  <script src="client/bower_components/jquery/dist/jquery.js"></script>
   <script src="lib/mocha/mocha.js"></script>
   <script src="lib/chai/chai.js"></script>
   <script src="lib/sinon/sinon.js"></script>
   <script src="client/bower_components/underscore/underscore.js"></script>
+  <script src="client/bower_components/jquery/dist/jquery.js"></script>
+
 
   <script>
     mocha.setup('bdd');
@@ -16,12 +17,14 @@
       window.mochaPhantomJS ? mochaPhantomJS.run() : mocha.run();
     });
   </script>
-  
+  <script src="client/env/config.js"></script>
+
   <!-- Source files -->
   <script src="client/scripts/app.js"></script>
 
   <!-- Spec files -->
   <script src="spec/chatterboxSpec.js"></script>
+
 
   
 
